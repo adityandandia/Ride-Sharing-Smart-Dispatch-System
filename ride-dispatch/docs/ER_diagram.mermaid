@@ -1,0 +1,89 @@
+erDiagram
+    users ||--o| riders : "is a"
+    users ||--o| drivers : "is a"
+    drivers ||--o{ vehicles : owns
+    riders ||--o{ trips : requests
+    drivers ||--o{ trips : drives
+    vehicles ||--o{ trips : "used in"
+    trips ||--o| payments : "paid by"
+    trips ||--o| reviews : "rated by"
+    riders ||--o{ reviews : writes
+    trips ||--o{ complaints : "disputed in"
+    riders ||--o{ complaints : files
+
+    users {
+        int user_id PK
+        string name
+        string email UK
+        string phone
+        string password_hash
+        enum role "Rider, Driver, Admin"
+        timestamp created_at
+    }
+    riders {
+        int rider_id PK, FK
+        enum preferred_payment
+    }
+    drivers {
+        int driver_id PK, FK
+        string license_no UK
+        enum status "Available, Busy, Offline"
+        decimal rating_avg "CHECK 0..5"
+        int rating_count
+        point current_location "SPATIAL INDEX"
+        timestamp location_updated_at
+    }
+    vehicles {
+        int vehicle_id PK
+        int driver_id FK
+        string plate_no UK
+        string model
+        enum vehicle_type
+        tinyint seats "CHECK 1..8"
+    }
+    trips {
+        int trip_id PK
+        int rider_id FK
+        int driver_id FK
+        int vehicle_id FK
+        point pickup_location "SPATIAL"
+        point dropoff_location "SPATIAL"
+        enum status "Matched, InProgress, Completed, Cancelled"
+        decimal distance_km "CHECK > 0"
+        decimal duration_min
+        decimal surge_multiplier "CHECK 1..5"
+        decimal fare "price snapshot"
+        timestamp requested_at
+        timestamp started_at
+        timestamp completed_at
+    }
+    payments {
+        int payment_id PK
+        int trip_id FK, UK
+        decimal amount
+        enum method
+        enum status "Pending, Paid, Failed, Refunded"
+    }
+    reviews {
+        int review_id PK
+        int trip_id FK, UK
+        int rider_id FK
+        tinyint rating "CHECK 1..5"
+        string comment
+    }
+    complaints {
+        int complaint_id PK
+        int trip_id FK
+        int rider_id FK
+        text description "embedded in ChromaDB"
+        enum status
+        text resolution
+    }
+    pricing_config {
+        tinyint config_id PK "CHECK = 1"
+        decimal base_fare
+        decimal per_km
+        decimal per_min
+        decimal min_fare
+        decimal surge_override "NULL = automatic"
+    }
